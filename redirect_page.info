@@ -1,0 +1,9 @@
+core = "7.x"
+description = "Provides a redirect page for external links."
+
+name = "Redirect Page"
+php = "5.2.4"
+project = "redirect_page"
+version = "7.x-1.0"
+
+scripts[] = js/external_links.js

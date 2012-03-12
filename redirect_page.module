@@ -1,0 +1,142 @@
+<?php
+
+/**
+ * @file
+ * Redirect Page module file
+ */
+
+define('REDIRECTION_PAGE_TITLE', "Redirection page");
+define('REDIRECTION_PAGE_PATH', "redirect");
+define('REDIRECTION_PAGE_DEFAULT_MESSAGE',
+       'We are redirecting you to <a id="external_link">here</a>.');
+define('REDIRECTION_PAGE_SAFE_REGEXP', '(\.gov|\.mil)');
+
+/**
+ * Implementation of hook_menu().
+ *
+ * Used to establish a redirection page.
+ */
+function redirect_page_menu() {
+  $items = array();
+
+  $items[REDIRECTION_PAGE_PATH] = array(
+    'title' => REDIRECTION_PAGE_TITLE,
+    'page callback' => 'redirect_page_render',
+    'access arguments' => array('access content'),
+  );
+
+  $items['admin/config/system/redirection_page'] = array(
+    'title' => 'Redirection page',
+    'description' => 'Configuration for the redirection page',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('redirect_page_config_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * redirect_page_config_form
+ *
+ * Called by drupal_get_form() in redirect_page_menu()
+ */
+function redirect_page_config_form($form, &$form_state) {
+  $form['redirect_page_message'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Redirection message'),
+    '#default_value' => variable_get('redirect_page_message', REDIRECTION_PAGE_DEFAULT_MESSAGE),
+    '#size' => 6,
+    '#description' => t('Message to be displayed on unsafe link redirection. Like to external page must be wrapped in an anchor with id "external_link".'),
+  );
+
+  $form['redirect_page_safe_regexp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Regular expression for safe links'),
+    '#default_value' => variable_get('redirect_page_safe_regexp', REDIRECTION_PAGE_SAFE_REGEXP),
+    '#size' => 150,
+    '#description' => t('A regular expression that indicates a non-external link.'),
+  );
+   
+  return system_settings_form($form);
+}
+
+/**
+ * redirect_page_render
+ *
+ * Serves as a page callback for redirect_hook_menu().
+ */
+function redirect_page_render() {
+  $msg = variable_get('redirect_page_message', REDIRECTION_PAGE_DEFAULT_MESSAGE);
+  $unsafe_url = urldecode($_GET['url']);
+  $js = <<<EOS
+
+jQuery(document).ready(function() {
+  jQuery('#external_link')
+    .attr('href', '${unsafe_url}')
+    .text('${unsafe_url}');
+});
+
+EOS;
+    
+  $items = array(
+    '#type' => 'markup',
+    '#markup' => $msg,
+  );
+
+  $items['#attached']['js'][] = array(
+    'data' => $js,
+    'type' => 'inline',
+  );
+
+  $safe_regexp = variable_get('redirect_page_safe_regexp', FALSE);
+
+  if ($safe_regexp) {
+    $items['#attached']['js'][] = array(
+      'data' => array('redirect_page_safe_href_regexp', $safe_regexp),
+      'type' => 'setting',
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_js_alter().
+ *
+ * Included in case we have JavaScript settings which need to be applied.
+ * hook_init() is not used because it isn't called on cached pages.
+ */
+function redirect_page_js_alter() {
+  $safe_regexp = variable_get('redirect_page_safe_regexp', FALSE);
+
+  if ($safe_regexp) {
+    drupal_add_js(array('redirect_page_safe_href_regexp' => $safe_regexp),
+                  'setting');
+  }
+}
+                                 
+/**
+ * Implementation of hook_enable().
+ *
+ * This is Ready.gov-specific.
+ */
+function redirect_page_enable() {
+  $ready_msg =<<<EOS
+
+<h2>Redirect</h2>
+
+<p>You are now leaving an official website of the Federal Emergency Management 
+Agency. Links to non-FEMA sites are provided for the visitor's convenience and 
+do not represent an endorsement by FEMA of any commercial or private issues, 
+products or services. Note that the privacy policy of the linked site may differ 
+from that of FEMA.</p>
+
+<p>Proceed to <a id="external_link">link_name</a>.</p>
+
+EOS;
+
+  variable_set('redirect_page_message', $ready_msg);
+}
+     
