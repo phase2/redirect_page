@@ -76,7 +76,9 @@ jQuery(document).ready(function() {
   jQuery('#external_link')
     .attr('href', '${unsafe_url}')
     .text('${unsafe_url}');
-});
+  jQuery('a.external_link')
+    .attr('href', '${unsafe_url}');
+    });
 
 EOS;
     
