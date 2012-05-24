@@ -52,7 +52,7 @@ function redirect_page_config_form($form, &$form_state) {
   );
 
   $form['redirect_page_safe_regexp'] = array(
-    '#type' => 'textfield',
+    '#type' => 'textarea',
     '#title' => t('Regular expression for safe links'),
     '#default_value' => variable_get('redirect_page_safe_regexp', REDIRECTION_PAGE_SAFE_REGEXP),
     '#size' => 150,
