@@ -112,6 +112,8 @@ EOS;
  */
 function redirect_page_js_alter() {
   $safe_regexp = variable_get('redirect_page_safe_regexp', FALSE);
+  $new_window = variable_get('redirect_new_window', TRUE);
+  drupal_add_js(array('redirect_new_window' => $new_window), 'setting');
 
   if ($safe_regexp) {
     drupal_add_js(array('redirect_page_safe_href_regexp' => $safe_regexp),

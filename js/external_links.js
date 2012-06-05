@@ -39,7 +39,7 @@ Drupal.behaviors.ready_gov_external_links = {
       redirect_node_path = "/redirect";
     }
 
-    redirect_new_window = Drupal.settings.redirect_new_window || true;
+    redirect_new_window = Drupal.settings.redirect_new_window == 'true' ? true : false;
 
     /** 
      * hasAttr
